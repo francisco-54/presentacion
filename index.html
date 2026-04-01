@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiducia — Consejo de Administración</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+    <style>
+        :root {
+            --blue:       #1a6bb5;
+            --blue-dark:  #0d3d6e;
+            --blue-light: #e8f2fb;
+            --border:     #d0dcea;
+            --text:       #2c3e50;
+            --muted:      #8a9ab5;
+            --bg:         #f4f7fb;
+            --white:      #ffffff;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text);
+        }
+
+        #app {
+            position: fixed;
+            inset: 0;
+        }
+
+        /* ══════════════════════════════════════════════
+           SPLASH — pantalla de bienvenida
+        ══════════════════════════════════════════════ */
+        #splash {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--blue-dark);
+            /* Salida: fade-out + scale-up suave */
+            transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #splash.splash-exit {
+            opacity: 0;
+            transform: scale(1.04);
+            pointer-events: none;
+        }
+        #splash.splash-gone {
+            display: none;
+        }
+
+        /* Partícula de fondo — efecto de luz suave */
+        #splash::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 50% 40%, rgba(26,107,181,0.55) 0%, transparent 70%),
+                radial-gradient(ellipse 30% 20% at 20% 80%, rgba(26,107,181,0.2) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* Línea decorativa superior e inferior */
+        #splash::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--blue), transparent);
+        }
+
+        .splash-bottom-line {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--blue), transparent);
+        }
+
+        /* Logo / marca */
+        .splash-eyebrow {
+            font-size: 0.58rem;
+            font-weight: 500;
+            letter-spacing: 6px;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            /* Animación de entrada */
+            opacity: 0;
+            transform: translateY(10px);
+            animation: splash-rise 0.7s 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .splash-rule {
+            width: 40px;
+            height: 2px;
+            background: var(--blue);
+            margin: 0 auto 28px;
+            opacity: 0;
+            animation: splash-rise 0.6s 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .splash-title {
+            font-size: clamp(2rem, 6vw, 3.6rem);
+            font-weight: 300;
+            letter-spacing: 0.12em;
+            color: #ffffff;
+            text-align: center;
+            line-height: 1.1;
+            text-transform: uppercase;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: splash-rise 0.8s 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .splash-title strong {
+            display: block;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            color: #fff;
+        }
+
+        .splash-subtitle {
+            margin-top: 18px;
+            font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+            font-weight: 400;
+            letter-spacing: 4px;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: splash-rise 0.7s 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Barra de progreso automática */
+        .splash-progress-wrap {
+            margin-top: 52px;
+            width: clamp(120px, 20vw, 180px);
+            height: 2px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 2px;
+            overflow: hidden;
+            opacity: 0;
+            animation: splash-rise 0.5s 1.1s ease forwards;
+        }
+        .splash-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--blue);
+            border-radius: 2px;
+            animation: splash-load 2.2s 1.2s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+        }
+
+        /* Botón de acción */
+        .splash-cta {
+            margin-top: 32px;
+            font-size: 0.6rem;
+            font-weight: 500;
+            letter-spacing: 4px;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+            opacity: 0;
+            animation: splash-rise 0.6s 1.4s ease forwards;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .splash-cta:hover { color: rgba(255,255,255,0.7); }
+
+        @keyframes splash-rise {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes splash-load {
+            to { width: 100%; }
+        }
+
+        /* ── TOPBAR ── */
+        #topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 32px;
+            z-index: 10;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+        }
+
+        #brand { display: flex; align-items: center; gap: 10px; }
+
+        .brand-rule {
+            width: 3px; height: 16px;
+            background: var(--blue);
+            border-radius: 2px;
+        }
+
+        #brand-text {
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        #top-count {
+            font-size: 0.68rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            color: var(--blue);
+        }
+
+        /* ── STAGE ── */
+        #stage {
+            position: fixed;
+            inset: 32px 0 40px 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #flip-wrapper {
+            position: relative;
+        }
+
+        #flip-book {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page {
+            overflow: hidden;
+            background: #000;
+        }
+
+        .page img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /* ── PROGRESO ── */
+        #progress {
+            position: fixed;
+            bottom: 38px; left: 0; right: 0;
+            height: 2px;
+            z-index: 11;
+            background: var(--border);
+        }
+        #progress-fill {
+            height: 100%;
+            background: var(--blue);
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* ── NAVBAR ── */
+        #navbar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 38px;
+            z-index: 10;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            width: 26px; height: 26px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .nav-btn:hover:not(:disabled) {
+            border-color: var(--blue);
+            background: var(--blue-light);
+        }
+        .nav-btn:disabled { opacity: 0.3; cursor: default; }
+        .nav-btn svg {
+            width: 14px; height: 14px;
+            stroke: var(--blue-dark);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        #dots {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            overflow: hidden;
+            padding: 0 8px;
+        }
+        .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--border);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.25s, transform 0.25s;
+        }
+        .dot.on { background: var(--blue); transform: scale(1.45); }
+        .dot:hover:not(.on) { background: var(--muted); }
+
+        #nav-num {
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 2.5px;
+            color: var(--text);
+            flex-shrink: 0;
+            min-width: 72px;
+            text-align: center;
+        }
+
+        #hint {
+            position: fixed;
+            bottom: 62px; right: 20px;
+            font-size: 0.52rem;
+            letter-spacing: 2px;
+            color: var(--muted);
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            z-index: 20;
+        }
+        #hint.gone { opacity: 0; }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SPLASH DE BIENVENIDA
+     Se muestra al cargar la página; se oculta
+     automáticamente tras ~3.5 s o al hacer clic.
+══════════════════════════════════════════════ -->
+<div id="splash">
+    <div class="splash-bottom-line"></div>
+
+    <p class="splash-eyebrow">Fiducia</p>
+    <div class="splash-rule"></div>
+
+    <h1 class="splash-title">
+        Bienvenido
+        <strong>Consejo de<br>Administración</strong>
+    </h1>
+
+    <p class="splash-subtitle">Sesión de trabajo · 2026</p>
+
+    <div class="splash-progress-wrap">
+        <div class="splash-progress-bar"></div>
+    </div>
+
+    <p class="splash-cta" id="splash-skip">Toca para continuar</p>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     VISOR PRINCIPAL
+══════════════════════════════════════════════ -->
+<div id="app">
+
+    <div id="topbar">
+        <div id="brand">
+            <div class="brand-rule"></div>
+            <div id="brand-text">Fiducia · Consejo de Administración</div>
+        </div>
+        <div id="top-count">—</div>
+    </div>
+
+    <div id="stage">
+        <div id="flip-wrapper">
+            <div id="flip-book">
+                <!-- Las páginas se inyectan por JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="progress"><div id="progress-fill"></div></div>
+
+    <div id="navbar">
+        <button class="nav-btn" id="btn-prev" disabled>
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+
+        <div id="dots"></div>
+
+        <div id="nav-num">— / —</div>
+
+        <button class="nav-btn" id="btn-next">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+    </div>
+
+</div>
+
+<div id="hint">← → · Rueda · Swipe</div>
+
+<script>
+    /* ══════════════════════════════════════════════════════════
+       SPLASH — lógica de cierre
+    ══════════════════════════════════════════════════════════ */
+    const splashEl = document.getElementById('splash');
+    const splashSkip = document.getElementById('splash-skip');
+    let splashDone = false;
+
+    function dismissSplash() {
+        if (splashDone) return;
+        splashDone = true;
+        splashEl.classList.add('splash-exit');
+        setTimeout(() => splashEl.classList.add('splash-gone'), 720);
+    }
+
+    /* Solo se cierra al presionar siguiente, flecha derecha, espacio o clic en splash */
+    splashEl.addEventListener('click', dismissSplash);
+    splashSkip.addEventListener('click', dismissSplash);
+
+    /* ══════════════════════════════════════════════════════════
+       CONFIGURACIÓN
+    ══════════════════════════════════════════════════════════ */
+    const TOTAL    = 10;
+    const MAX_DOTS = 49;
+
+    const IMAGES = Array.from({ length: TOTAL }, (_, i) =>
+        `Diapositiva${String(i + 1).padStart(2, '0')}.JPG`
+    );
+
+    const FOLDERS_TO_TRY = ["./consejo/", "./_consejo/", "consejo/", "_consejo/"];
+    let FOLDER = FOLDERS_TO_TRY[0];
+
+    function detectFolder(cb) {
+        let idx = 0;
+        function tryNext() {
+            if (idx >= FOLDERS_TO_TRY.length) { cb(); return; }
+            const testImg = new Image();
+            testImg.onload  = () => { FOLDER = FOLDERS_TO_TRY[idx]; cb(); };
+            testImg.onerror = () => { idx++; tryNext(); };
+            testImg.src = FOLDERS_TO_TRY[idx] + "Diapositiva01.JPG?t=" + Date.now();
+        }
+        tryNext();
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       ESTADO
+    ══════════════════════════════════════════════════════════ */
+    let current  = 0;
+    let pageFlip = null;
+
+    /* ══════════════════════════════════════════════════════════
+       DIMENSIONES
+    ══════════════════════════════════════════════════════════ */
+    function computeSize() {
+        const stage = document.getElementById('stage');
+        const rect  = stage.getBoundingClientRect();
+        const ratio = 16 / 9;
+
+        let w = rect.width;
+        let h = w / ratio;
+        if (h > rect.height) { h = rect.height; w = h * ratio; }
+
+        return { w: Math.floor(w), h: Math.floor(h) };
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       PÁGINAS
+    ══════════════════════════════════════════════════════════ */
+    const bookEl = document.getElementById('flip-book');
+
+    function buildPages(size) {
+        bookEl.innerHTML = '';
+        IMAGES.forEach((file, i) => {
+            const div = document.createElement('div');
+            div.className = 'page';
+            div.style.width  = size.w + 'px';
+            div.style.height = size.h + 'px';
+
+            const img = document.createElement('img');
+            img.alt          = `Diapositiva ${i + 1}`;
+            img.dataset.file = file;
+            if (i < 3) img.loading = 'eager';
+            else        img.loading = 'lazy';
+
+            div.appendChild(img);
+            bookEl.appendChild(div);
+        });
+    }
+
+    function assignSrcs() {
+        bookEl.querySelectorAll('.page img').forEach(img => {
+            img.src = FOLDER + img.dataset.file;
+        });
+    }
+
+    function preload(i) {
+        const pages = bookEl.querySelectorAll('.page img');
+        for (let d = -1; d <= 3; d++) {
+            const idx = i + d;
+            if (idx >= 0 && idx < TOTAL) {
+                const img = pages[idx];
+                if (img && !img.src) img.src = FOLDER + img.dataset.file;
+            }
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       HUD
+    ══════════════════════════════════════════════════════════ */
+    const progFill = document.getElementById('progress-fill');
+    const navNum   = document.getElementById('nav-num');
+    const topCount = document.getElementById('top-count');
+    const dotsEl   = document.getElementById('dots');
+    const btnPrev  = document.getElementById('btn-prev');
+    const btnNext  = document.getElementById('btn-next');
+    const hintEl   = document.getElementById('hint');
+
+    function buildDots() {
+        dotsEl.innerHTML = '';
+        const step = TOTAL > MAX_DOTS ? Math.ceil(TOTAL / MAX_DOTS) : 1;
+        for (let i = 0; i < TOTAL; i += step) {
+            const d = document.createElement('div');
+            d.className   = 'dot';
+            d.dataset.idx = i;
+            d.title       = `Ir a ${i + 1}`;
+            d.addEventListener('click', () => goTo(i));
+            dotsEl.appendChild(d);
+        }
+    }
+
+    function updateDots(i) {
+        const step = TOTAL > MAX_DOTS ? Math.ceil(TOTAL / MAX_DOTS) : 1;
+        dotsEl.querySelectorAll('.dot').forEach(d => {
+            const t = parseInt(d.dataset.idx);
+            d.classList.toggle('on', t <= i && t + step > i);
+        });
+    }
+
+    function updateHUD(n) {
+        const num = n + 1;
+        navNum.textContent   = `${String(num).padStart(2,'0')} / ${String(TOTAL).padStart(2,'0')}`;
+        topCount.textContent = `${String(num).padStart(2,'0')} / ${String(TOTAL).padStart(2,'0')}`;
+        progFill.style.width = `${(num / TOTAL * 100).toFixed(2)}%`;
+        btnPrev.disabled = n === 0;
+        btnNext.disabled = n === TOTAL - 1;
+        updateDots(n);
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       NAVEGACIÓN
+    ══════════════════════════════════════════════════════════ */
+    function goTo(target) {
+        if (!pageFlip) return;
+        if (target < 0 || target >= TOTAL) return;
+        if (target === current) return;
+        preload(target);
+        pageFlip.flip(target, 'top');
+    }
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    /* ══════════════════════════════════════════════════════════
+       INICIALIZAR PAGE-FLIP
+    ══════════════════════════════════════════════════════════ */
+    function initPageFlip(size) {
+        const wrapper = document.getElementById('flip-wrapper');
+        wrapper.style.width  = size.w + 'px';
+        wrapper.style.height = size.h + 'px';
+        bookEl.style.width   = size.w + 'px';
+        bookEl.style.height  = size.h + 'px';
+
+        pageFlip = new St.PageFlip(bookEl, {
+            width:           size.w,
+            height:          size.h,
+            size:            'fixed',
+            minWidth:        size.w,
+            maxWidth:        size.w,
+            minHeight:       size.h,
+            maxHeight:       size.h,
+            drawShadow:         false,
+            flippingTime:       800,
+            usePortrait:        true,
+            startPage:          0,
+            showCover:          false,
+            clickEventForward:  false,
+            useMouseEvents:     false,
+            swipeDistance:      9999,
+            mobileScrollSupport: false,
+        });
+
+        pageFlip.loadFromHTML(bookEl.querySelectorAll('.page'));
+
+        pageFlip.on('flip', e => {
+            current = e.data;
+            updateHUD(current);
+        });
+
+        updateHUD(0);
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       EVENTOS
+    ══════════════════════════════════════════════════════════ */
+    document.addEventListener('keydown', e => {
+        if (['ArrowRight', ' '].includes(e.key)) { e.preventDefault(); if (!splashDone) { dismissSplash(); return; } next(); }
+        if (e.key === 'ArrowLeft')               { e.preventDefault(); if (!splashDone) { dismissSplash(); return; } prev(); }
+        if (e.key === 'Home') { dismissSplash(); goTo(0); }
+        if (e.key === 'End')  { dismissSplash(); goTo(TOTAL - 1); }
+    });
+
+    let wLock = false;
+    document.addEventListener('wheel', e => {
+        if (wLock) return; wLock = true;
+        if (!splashDone) { dismissSplash(); setTimeout(() => { wLock = false; }, 600); return; }
+        e.deltaY > 0 ? next() : prev();
+        setTimeout(() => { wLock = false; }, 600);
+    }, { passive: true });
+
+    let tx0 = 0;
+    document.addEventListener('touchstart', e => { tx0 = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - tx0;
+        if (dx < -40) { if (!splashDone) { dismissSplash(); return; } next(); }
+        if (dx >  40) { if (!splashDone) { dismissSplash(); return; } prev(); }
+    }, { passive: true });
+
+    btnNext.addEventListener('click', () => { if (!splashDone) { dismissSplash(); return; } next(); });
+    btnPrev.addEventListener('click', () => { if (!splashDone) { dismissSplash(); return; } prev(); });
+
+    function hideHint() {
+        hintEl.classList.add('gone');
+        ['keydown','click','wheel','touchstart'].forEach(ev =>
+            document.removeEventListener(ev, hideHint)
+        );
+    }
+    ['keydown','click','wheel','touchstart'].forEach(ev =>
+        document.addEventListener(ev, hideHint, { passive: true })
+    );
+
+    /* ══════════════════════════════════════════════════════════
+       RESIZE
+    ══════════════════════════════════════════════════════════ */
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (!pageFlip) return;
+            pageFlip.updateFromHtml(bookEl.querySelectorAll('.page'));
+        }, 250);
+    });
+
+    /* ══════════════════════════════════════════════════════════
+       ARRANQUE
+    ══════════════════════════════════════════════════════════ */
+    (function init() {
+        const size = computeSize();
+        buildPages(size);
+        buildDots();
+        initPageFlip(size);
+
+        detectFolder(() => {
+            assignSrcs();
+            preload(0);
+        });
+    })();
+</script>
+</body>
+</html>
