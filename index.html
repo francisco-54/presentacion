@@ -444,7 +444,7 @@
     /* ══════════════════════════════════════════════════════════
        CONFIGURACIÓN
     ══════════════════════════════════════════════════════════ */
-    const TOTAL    = 10;
+    let   TOTAL    = 0;
     const MAX_DOTS = 49;
 
     const FOLDERS_TO_TRY    = ["./consejo/", "./_consejo/", "consejo/", "_consejo/"];
@@ -456,6 +456,17 @@
         return `Diapositiva${String(i + 1).padStart(2, '0')}.${EXT}`;
     }
 
+    function countImages(cb) {
+        TOTAL = 1; // Diapositiva01 ya fue confirmada
+        function tryNext() {
+            const testImg = new Image();
+            testImg.onload  = () => { TOTAL++; tryNext(); };
+            testImg.onerror = () => { cb(); };
+            testImg.src = `${FOLDER}Diapositiva${String(TOTAL + 1).padStart(2, '0')}.${EXT}?t=${Date.now()}`;
+        }
+        tryNext();
+    }
+
     function detectFolder(cb) {
         const combos = [];
         FOLDERS_TO_TRY.forEach(f => EXTENSIONS_TO_TRY.forEach(e => combos.push([f, e])));
@@ -464,7 +475,7 @@
             if (idx >= combos.length) { cb(); return; }
             const [f, e] = combos[idx];
             const testImg = new Image();
-            testImg.onload  = () => { FOLDER = f; EXT = e; cb(); };
+            testImg.onload  = () => { FOLDER = f; EXT = e; countImages(cb); };
             testImg.onerror = () => { idx++; tryNext(); };
             testImg.src = `${f}Diapositiva01.${e}?t=${Date.now()}`;
         }
@@ -683,12 +694,11 @@
        ARRANQUE
     ══════════════════════════════════════════════════════════ */
     (function init() {
-        const size = computeSize();
-        buildPages(size);
-        buildDots();
-        initPageFlip(size);
-
         detectFolder(() => {
+            const size = computeSize();
+            buildPages(size);
+            buildDots();
+            initPageFlip(size);
             assignSrcs();
             preload(0);
         });
